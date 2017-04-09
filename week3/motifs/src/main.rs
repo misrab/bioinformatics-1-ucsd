@@ -137,26 +137,59 @@ fn main() {
 //     return Neighborhood
 // maybe a faster way to do this, but it's UTF-8 so indexing doens't work
 // i.e. it's byte indexing...
-fn prefix(s: &str) -> String {
+fn suffix(s: &str) -> String {
     // &s[1..s.len()-1]
     s.chars().skip(1).take(s.len()-1).collect()
 }
 
+fn hamming(a: &str, b: &str) -> u8 {
+    let mut mismatches = 0;
+    for i in 0..a.len() {
+        if a.chars().nth(i) != b.chars().nth(i) {
+            mismatches += 1;
+        }
+    }
+
+    mismatches
+}
+
 // for a given kmer, get all dneighbours
 fn get_kmer_dneighbours(k: usize, d: u8, kmer: &str) -> HashSet<String> {
-    let result = HashSet::new();
+    let kmer_string = kmer.to_string();
+    // result.insert(kmer);
 
-    // let symbol: char;
-    // for i in 0..k {
-    //     symbol = kmer[i];
-    //     for n in NUCLEOTIDES {
-    //         if n == symbol { continue; }
-    //         neighbor =
-    //     }
-    // }
+    // if no error allowed, return set with string itself
+    if d==0 {
+        return [ kmer.to_string() ].iter().cloned().collect();
+    }
+    // if singleton, return singletons
+    if kmer_string.len() == 1 {
+        return ["G".to_string(), "A".to_string(), "T".to_string(), "C".to_string()].iter().cloned().collect();
+    }
+
+    let mut neighbourhood = HashSet::new();
+    let suff = &suffix(kmer);
+    let suffix_neighbours = get_kmer_dneighbours(k-1, d, suff);
+
+    let mut n: String;
+    for text in suffix_neighbours {
+        if hamming(suff, &text) < d {
+            for x in NUCLEOTIDES.iter() {
+                n = x.to_string();
+                n.push_str(&text);
+
+                neighbourhood.insert(n);
+            }
+        } else {
+            // let novel = kmer.chars().nth(0).to_string().push_str(text);
+            n = kmer.chars().nth(0).unwrap().to_string();
+            n.push_str(&text);
+            neighbourhood.insert(n);
+        }
+    }
 
 
-    result
+    neighbourhood
 }
 
 //
@@ -178,18 +211,24 @@ mod tests {
 
     #[test]
     fn find_d_neighbourhood() {
-        let pattern = "G"; //.to_string();
+        let pattern = "GA"; //.to_string();
 
         let k = pattern.len();
         let mut neighbours = get_kmer_dneighbours(k, 0, pattern);
-        assert!(neighbours.len() == 0);
+        assert!(neighbours.len() == 1);
 
         neighbours = get_kmer_dneighbours(k, 1, pattern);
         let mut benchmark: HashSet<String> = HashSet::new();
-        benchmark.insert("G".to_string());
-        benchmark.insert("A".to_string());
-        benchmark.insert("T".to_string());
-        benchmark.insert("C".to_string());
+        benchmark.insert("GA".to_string());
+        benchmark.insert("GT".to_string());
+        benchmark.insert("GC".to_string());
+        benchmark.insert("GG".to_string());
+
+        benchmark.insert("TA".to_string());
+        benchmark.insert("CA".to_string());
+        benchmark.insert("GA".to_string());
+
+        println!("{:?}\n{:?}", neighbours, benchmark);
         assert!(neighbours==benchmark);
     }
 }
