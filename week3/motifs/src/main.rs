@@ -41,56 +41,42 @@ pub fn pattern_match(d: u8, template: &str, pattern: &str) -> bool {
 }
 
 
-
-fn motif_enumeration(dna: &[std::string::String], k: usize, d: u8) {
+// MotifEnumeration(Dna, k, d)
+//     Patterns ← an empty set
+//     for each k-mer Pattern in Dna
+//         for each k-mer Pattern’ differing from Pattern by at most d mismatches
+//             if Pattern' appears in each string from Dna with at most d ﻿mismatches
+//                 add Pattern' to Patterns
+//     remove duplicates from Patterns
+//     return Patterns
+fn motif_enumeration(dna: &[std::string::String], k: usize, d: u8) -> HashSet<String> {
     println!("Running Motif Enumeration...");
 
-    if dna.len() == 0 { return; }
+    let mut patterns: HashSet<String> = HashSet::new();
+    let mut tried: HashSet<&str> = HashSet::new();
+    'dna: for line in dna {
+        'kmer: for i in 0..(line.len()-k+1) {
+            let kmer = &line[i..i+k];
+            if tried.contains(kmer) { continue; }
+            tried.insert(kmer);
+
+            let neighbours = get_kmer_dneighbours(k, d, kmer);
+            'neigh: for neigh in neighbours {
+                // check if it's in each string of dna
+                for line in dna {
+                    if !pattern_match(d, line, &neigh) {
+                        // move on to next neighbor
+                        continue 'neigh;
+                    }
+                }
+                // it was in each
+                patterns.insert(neigh);
+            }
+        }
+    }
 
 
-    // let mut matches = HashSet::new();
-    // let mut tried = HashSet::new();
-
-    // first get all dneighbours of kmers in first string
-    print!("{:?}", dna[0]);
-
-    // let first = &dna[0];
-    // let mut candidates: Vec<&str>;
-    // 'kmer: for i in 0..(first.len() - k + 1) {
-    //     let kmer = &first[i..i+k];
-    //     candidates = get_kmer_dneighbours(k, d, kmer);
-    // }
-
-    // for line in dna {
-    //     // go over k-mers in line
-    //     'kmer: for i in 0..(line.len() - k + 1) {
-    //         let kmer = &line[i..i+k];
-    //
-    //         let dneighbours = get_kmer_dneighbours(k, d, kmer);
-    //
-    //         // if we've tried this kmer just continue
-    //         if tried.contains(kmer) { continue 'kmer; }
-    //         else { tried.insert(kmer); }
-    //
-    //         // println!("{:?}", tried);
-    //
-    //         // now do a d-pattern match across each dna string
-    //         // if not found in any one, it's disqualified
-    //         'dna: for line2 in dna {
-    //             let qualified = pattern_match(d, line2, kmer);
-    //             if !qualified {
-    //                 // println!("Found valid kmer {:?}", kmer);
-    //                 // try next kmer
-    //                 continue 'kmer;
-    //             }
-    //         }
-    //         // if we get here it means it's in all dna strings
-    //         matches.insert(kmer);
-    //
-    //     }
-    // }
-
-    // println!("{:?}", matches);
+    patterns
 }
 
 fn read_file(filename: &str) -> Vec<String> {
@@ -115,8 +101,8 @@ fn main() {
     let (k, d) = (line1[0].parse::<usize>().unwrap(), line1[1].parse::<u8>().unwrap());
     let dna = &lines[1..];
 
-    motif_enumeration(dna, k, d);
-
+    let patterns = motif_enumeration(dna, k, d);
+    println!("{:?}", patterns);
 }
 
 
@@ -227,6 +213,7 @@ mod tests {
         benchmark.insert("TA".to_string());
         benchmark.insert("CA".to_string());
         benchmark.insert("GA".to_string());
+        benchmark.insert("AA".to_string());
 
         println!("{:?}\n{:?}", neighbours, benchmark);
         assert!(neighbours==benchmark);
