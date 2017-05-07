@@ -21,7 +21,7 @@ impl Iterator for AllKmers {
   fn next(&mut self) -> Option<String> {
     if self.curr_index > self.max_kmers { return None; }
 
-    let kmer = kmer_from_index(self.curr_index);
+    let kmer = kmer_from_index(self.k as u32, self.curr_index);
 
     self.curr_index += 1;
 
@@ -34,14 +34,21 @@ pub fn all_kmers(k: usize) -> AllKmers {
 }
 // We let A:0,C:1,T:2,G:3
 // We then let "ACT" = 0*4^2 + 1*4^1 + 2*4^0 as our mapping
-fn kmer_from_index(index: u32) -> String {
+fn kmer_from_index(k: u32, index: u32) -> String {
   let mut kmer = String::from("");
 
-  
+  let mut count = index;
+  let mut chunks;
+  let mut base;
+  for i in 0..k {
+    base = NUM_NUCLEOTIDES.pow(k - i - 1);
+    chunks = count / base;
+    kmer.push(NUCLEOTIDES[chunks as usize]);
+    count -= chunks * base;
+  }
 
   kmer
 }
-
 // def PatternToIndex(k, pattern):
 //     # print "finding pattern index for " + pattern + " of length " + str(len(pattern))
 //     index = 0
@@ -50,23 +57,6 @@ fn kmer_from_index(index: u32) -> String {
 //
 //
 //     return index
-//
-// def IndexToPattern(k, index):
-//     result = ''
-//
-//     for i in xrange(k):
-//         base = 4**(k-i-1)
-//         # how many of these are there
-//         # e.g. how many 4^6's
-//         count = index / base
-//         nucleotide = ValueToNucleotide(count)
-//         result += nucleotide
-//
-//         # subtract the value found
-//         index -= count*base
-//
-//     return result
-
 
 pub fn hamming(a: &str, b: &str) -> i32 {
   let mut mismatches = 0;
@@ -124,10 +114,11 @@ fn read_file(filename: &str) -> Vec<String> {
 
 
 #[test]
+#[ignore]
 fn test_all_kmers() {
-    let three_mers = all_kmers(3);
+    let three_mers = all_kmers(5);
 
-    for i in three_mers.take(5) {
+    for i in three_mers.take(7) {
         println!("{}", i);
     }
 }
