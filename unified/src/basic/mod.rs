@@ -2,7 +2,10 @@ use std::io::BufReader;
 use std::io::BufRead;
 use std::fs::File;
 use std::env;
+use std::vec::Vec;
 
+use std::collections::HashSet;
+use std::iter::FromIterator;
 
 
 static NUM_NUCLEOTIDES: u32 = 4;
@@ -92,12 +95,6 @@ pub fn get_file_lines() -> Vec<String> {
     // let dna = &lines[1..];
 }
 
-
-
-//
-// Internal
-//
-
 fn read_file(filename: &str) -> Vec<String> {
     let f = File::open(filename).unwrap();
     let buf = BufReader::new(&f);
@@ -107,10 +104,76 @@ fn read_file(filename: &str) -> Vec<String> {
 
 
 
+// Pseudocode
+// Neighbors(Pattern, d)
+//      if d = 0
+//          return {Pattern}
+//      if |Pattern| = 1
+//          return {A, C, G, T}
+//      Neighborhood ← an empty set
+//      SuffixNeighbors ← Neighbors(Suffix(Pattern), d)
+//      for each string Text from SuffixNeighbors
+//          if HammingDistance(Suffix(Pattern), Text) < d
+//              for each nucleotide x
+//                  add x • Text to Neighborhood
+//          else
+//              add FirstSymbol(Pattern) • Text to Neighborhood
+//      return Neighborhood
+fn suffix(s: &str) -> String {
+  s.chars().skip(1).take(s.len()-1).collect()
+}
+
+pub fn neighbours(pattern: String, d: usize) -> Vec<String> {
+    if d == 0 { return vec![pattern]; }
+    if pattern.len() == 1 { return vec!["A".to_string(), "C".to_string(), "T".to_string(), "G".to_string()]; }
+
+    let mut neighbourhood: Vec<String> = Vec::new();
+
+    let suffix_neighbours = neighbours(suffix(&pattern[..]), d);
+    for text in suffix_neighbours {
+        if hamming(&suffix(&pattern[..])[..], &text[..]) < d as i32 {
+            for nucleotide in NUCLEOTIDES.into_iter() {
+                let mut s = nucleotide.to_string();
+                s.push_str(&text[..]);
+                neighbourhood.push(s);
+            }
+        } else {
+            let mut s: String = pattern.chars().take(1).collect();
+            s.push_str(&text[..]);
+            neighbourhood.push(s);
+        }
+    }
+
+    neighbourhood
+}
 
 
-#[cfg(test)]
 
+
+
+// #[cfg(test)]
+
+#[test]
+// #[ignore]
+fn test_neighbours() {
+    // read test_input/Neighbors.txt
+    // first line: string; second line: d
+    // return results as line by line d-neighbors in a file
+    let lines = read_file("test_input/Neighbors.txt");
+    let ref pattern = lines[1].trim();
+    // println!("{:?}", lines[2].trim());
+    let d: usize = lines[2].trim().parse::<usize>().unwrap();
+
+    // get d-neighbours
+    let neighbs = neighbours(pattern.to_string(), d);
+    let neighbs_set: HashSet<String> = HashSet::from_iter(neighbs.iter().cloned());
+
+    let answers = &lines.to_vec()[4..];
+    for answer in answers {
+        assert!(neighbs_set.contains(answer));
+    }
+    // println!("{:?}", neighbs);
+}
 
 
 #[test]
