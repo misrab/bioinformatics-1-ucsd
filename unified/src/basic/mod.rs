@@ -173,6 +173,10 @@ fn test_neighbours() {
         assert!(neighbs_set.contains(answer));
     }
     // println!("{:?}", neighbs);
+    // if desired print out
+    for n in neighbs {
+        println!("{:?}", n);
+    }
 }
 
 
