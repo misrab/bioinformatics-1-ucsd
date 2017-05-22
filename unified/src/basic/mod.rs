@@ -1,4 +1,5 @@
 use std::io::BufReader;
+use std::io::BufWriter;
 use std::io::BufRead;
 use std::fs::File;
 use std::env;
@@ -6,6 +7,8 @@ use std::vec::Vec;
 
 use std::collections::HashSet;
 use std::iter::FromIterator;
+
+use std::io::Write;
 
 
 static NUM_NUCLEOTIDES: u32 = 4;
@@ -154,6 +157,30 @@ pub fn neighbours(pattern: String, d: usize) -> Vec<String> {
 // #[cfg(test)]
 
 #[test]
+#[ignore]
+fn moo() {
+    // actually run for Stepik
+    let lines = read_file("test_input/qoo.txt");
+    let ref pattern = lines[0].trim();
+    let d: usize = lines[1].trim().parse::<usize>().unwrap();
+    let neighbs = neighbours(pattern.to_string(), d);
+    // for n in neighbs {
+    //     println!("{}", n);
+    // }
+    // write to file
+    let output = "test_input/moo_output.txt";
+    let mut f = File::create(output).expect("Unable to create file");
+    let mut writer = BufWriter::new(&f);
+    // f.write_all(neighbs).expect("Unable to write data");
+    for n in neighbs {
+        // println!("{}", n);
+
+        write!(&mut writer, "{}\n", n);
+    }
+}
+
+
+#[test]
 // #[ignore]
 fn test_neighbours() {
     // read test_input/Neighbors.txt
@@ -174,9 +201,7 @@ fn test_neighbours() {
     }
     // println!("{:?}", neighbs);
     // if desired print out
-    for n in neighbs {
-        println!("{:?}", n);
-    }
+
 }
 
 
